@@ -46,7 +46,7 @@ namespace Piper
                 Debug.LogError($"Provided espeak data path \"{datapath}\" doesn't exist!");
                 return false;
             }
-
+            PiperNative.PrintLibraryName();
             var code = PiperNative.init_piper(datapath);
             if (code < 0)
             {

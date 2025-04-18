@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
 using Unity.Sentis;
 using UnityEngine;
@@ -16,7 +15,7 @@ namespace Piper
         public int sampleRate = 22050;
 
         private Model _runtimeModel;
-        private IWorker _worker;
+        private Worker _worker;
 
         private void Awake()
         {
@@ -24,7 +23,8 @@ namespace Piper
             PiperWrapper.InitPiper(espeakPath);
 
             _runtimeModel = ModelLoader.Load(model);
-            _worker = WorkerFactory.CreateWorker(backend, _runtimeModel);
+            _worker = new Worker(_runtimeModel, backend);
+
         }
 
         public async Task<AudioClip> TextToSpeech(string text)
@@ -41,30 +41,28 @@ namespace Piper
 
             var inputLengthsShape = new TensorShape(1);
             var scalesShape = new TensorShape(3);
-            using var scalesTensor = new TensorFloat(scalesShape, new float[] { 0.667f, 1f, 0.8f });
+            using var scalesTensor = new Tensor<float>(scalesShape, new [] { 1f, 1f, 1f });
 
             var audioBuffer = new List<float>();
-            for (int i = 0; i < phonemes.Sentences.Length; i++) 
+            foreach (var sentence in phonemes.Sentences)
             {
-                var sentence = phonemes.Sentences[i];
-
                 var inputPhonemes = sentence.PhonemesIds;
                 var inputShape = new TensorShape(1, inputPhonemes.Length);
-                using var inputTensor = new TensorInt(inputShape, inputPhonemes);
-                using var inputLengthsTensor = new TensorInt(inputLengthsShape, new int[] { inputPhonemes.Length });
+                using var inputTensor = new Tensor<int>(inputShape, inputPhonemes);
+                using var inputLengthsTensor = new Tensor<int>(inputLengthsShape, new [] { inputPhonemes.Length });
 
-                var input = new Dictionary<string, Tensor>();
-                input.Add("input", inputTensor);
-                input.Add("input_lengths", inputLengthsTensor);
-                input.Add("scales", scalesTensor);
+                _worker.Schedule(inputTensor, inputLengthsTensor, scalesTensor);
 
-                _worker.Execute(input);
+                using var outputTensor = _worker.PeekOutput() as Tensor<float>;
+                if (outputTensor != null)
+                {
+                    await outputTensor.ReadbackAndCloneAsync();
+                    
+                    var output = outputTensor.DownloadToArray();
+                    Debug.Log(output.Length);
 
-                using var outputTensor = _worker.PeekOutput() as TensorFloat;
-                await outputTensor.MakeReadableAsync();
-
-                var output = outputTensor.ToReadOnlyArray();
-                audioBuffer.AddRange(output);
+                    audioBuffer.AddRange(output);
+                }
             }
 
             Debug.Log($"Finished piper inference: {sw.ElapsedMilliseconds} ms");

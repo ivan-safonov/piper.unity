@@ -1,5 +1,6 @@
 using System;
 using System.Runtime.InteropServices;
+using UnityEngine;
 
 namespace Piper.Native
 {
@@ -20,8 +21,15 @@ namespace Piper.Native
 
     public static unsafe class PiperNative
     {
-        private const string LibraryName = "piper_phonemize";
+        private const string LibraryName =
 
+#if UNITY_STANDALONE_OSX
+            "libpiper_phonemize";
+        
+#elif UNITY_STANDALONE_WIN
+            "piper_phonemize";
+#endif
+        
         [DllImport(LibraryName)]
         public static extern int init_piper(string dataPath);
 
@@ -33,6 +41,10 @@ namespace Piper.Native
 
         [DllImport(LibraryName)]
         public static extern void free_piper();
+        public static void PrintLibraryName()
+        {
+            Debug.Log(LibraryName);
+        }
 
     }
 }

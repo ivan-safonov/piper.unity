@@ -14,7 +14,7 @@ namespace Piper.Samples
 
         private AudioSource _source;
 
-        private void Awake()
+        private void Awake() 
         {
             _source = GetComponent<AudioSource>();
             input.onSubmit.AddListener(OnInputSubmit);
