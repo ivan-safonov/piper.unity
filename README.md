@@ -33,6 +33,6 @@ piper.unity is released under the GPLv3 license.
 
 It uses [eSpeak NG](https://github.com/espeak-ng/espeak-ng) compiled libraries and data which are under GPLv3 license.
 
-It also uses [Piper Phonemization fork](https://github.com/Macoron/piper-phonemize) compiled library which is under MIT license.
+It also uses [Piper Phonemization fork](https://github.com/Macoron/piper-phonemize/tree/unity) compiled library which is under MIT license.
 
 Models aren't included in this repository. Please contact the original model's creators to learn more about their licenses.
